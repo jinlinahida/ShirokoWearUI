@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shirokowear_sample_app_name">ShirokoWear Sample</string>
+    <string name="shirokowear_sample_title">ShirokoWear UI</string>
+    <string name="shirokowear_sample_body">Token layer smoke test: the ambient spotlight should breathe behind this card.</string>
+</resources>
