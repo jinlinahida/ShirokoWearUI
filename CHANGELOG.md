@@ -176,3 +176,23 @@ only allowed in pre-releases.
 - Not migrated yet from the source app's welcome screen: the step machine that hosts
   these pieces (awaiting a decision), the disclaimer/mode-selection step content, and
   the persisted "onboarding seen" flag — the last two are app state by design.
+
+### Added — intro step machine
+
+- `introStepDirection(fromStep, toStep)` (pure, in `ShirokoWearIntroDirection.kt`) and
+  `ShirokoWearIntroSteps` (composable, in its own file): a linear onboarding flow is a
+  hierarchy of its own kind, so advancing drills forward and returning pops back,
+  reusing the same spatial story as route transitions. The host keeps owning the step
+  index and each step's content — "onboarding seen" is app state.
+- Direction derives from `TransitionScope.initialState`/`targetState`; there is no
+  `prevState` on the transition scope, and `content` must be typed
+  `@Composable AnimatedContentScope.(Int) -> Unit`, both learned from compiler errors
+  rather than guessed correctly the first time.
+- `sample` gains a third route (`intro`) exercising step machine + breathing prompt +
+  tap-to-advance + gradient wordmark, with the video backdrop deliberately passed a
+  null source: a clip is a brand asset and stays in the consuming app, so the gallery
+  proves the API and the blank-degradation path, not the loop.
+- Coverage gate lesson recorded in `AGENTS.md`: a gated file may contain neither
+  `android.*` imports nor `@Composable` code. Adding `ShirokoWearIntroStepsKt*` to the
+  filter dropped navigation coverage to 51.85% for the same reason haptics did at 44%
+  — pure functions must live in their own file or the gate measures the wrong thing.

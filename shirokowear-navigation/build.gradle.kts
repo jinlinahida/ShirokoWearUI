@@ -14,6 +14,7 @@ kover {
             includes {
                 classes(
                     "io.github.jinlinahida.shirokowear.navigation.ShirokoWearRouteKt*",
+                    "io.github.jinlinahida.shirokowear.navigation.ShirokoWearIntroDirectionKt*",
                 )
             }
         }

@@ -82,10 +82,10 @@
 `koverVerify` 只统计 `ShirokoWearDimens*`、`ShirokoWearHapticWaveform*`、
 `ShirokoWearAmbientPalette*`（以及 navigation 里的 `ShirokoWearRouteKt*`），门槛 80%。
 
-因此有一条结构约束：**`ShirokoWearHapticWaveform.kt` 不得 import 任何 `android.*`**。
-波形表与平台派发（`toEffect()`、Vibrator、厂商常量）分文件放，不是风格问题——放一起时
-门禁把不可 JVM 测试的马达驱动算进分母，实测从 80% 掉到 73%，门禁就会逼你写假测试。
-新增纯逻辑同理：与 Android 副作用分文件。
+因此有一条结构约束：**被门禁统计的文件里不得有 `android.*` import，也不得有 `@Composable`**。
+门禁两次踩过同一个坑（触觉表 + `introStepDirection`）：纯函数与 Composable 或 Android
+副作用同文件时，覆盖率分母包含永不可测的行，44% / 51% 的失败其实是在提醒你文件切错了。
+新增纯逻辑一律与 UI/副作用分文件——这不是风格，是让门禁有意义的前提。
 
 同理，**不要**用 JVM 测试去断言 Compose 快照调度器（例如 `derivedStateOf` 何时失效）：
 同一份源码在 debug 变体通过、release 变体失败，那种测试日后只会被删掉。只断言本库自己
