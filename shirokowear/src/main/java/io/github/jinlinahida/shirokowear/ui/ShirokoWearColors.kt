@@ -82,7 +82,7 @@ public fun shirokoWearInkColors(): ShirokoWearColors = ShirokoWearColors(
     outlineButtonBackground = Color(38, 38, 38, 38),
     contentPrimary = Color.White,
     contentDisabled = Color.White.copy(alpha = 0.38f),
-    spotlightDefault = Color(0xFF64B5F6),
+    spotlightDefault = ShirokoWearSpotlights.default,
     accentCopper = Color(0xFFC5A059),
     accentGold = Color(0xFFFFD700),
     wheelSlotBackground = Color(0xFF221E18),

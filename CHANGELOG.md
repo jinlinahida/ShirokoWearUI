@@ -57,6 +57,35 @@ only allowed in pre-releases.
 - `ShirokoWearMorphingLoader` + `ShirokoWearLoadingIndicator` (Material 3
   Expressive sparkle → circle → scallop → squircle, 2400ms cycle).
 - `sample` is now a component gallery, not a smoke screen.
+
+### Added — route contract, transitions and ambient light
+
+- `shirokowear-navigation`: `ShirokoWearRoute` (`routeKey` / `depth` / `backKey`)
+  replaces the 34-branch `AppScreen` switch the source app had baked into its
+  motion code. A design system cannot know an app's screen enum; depth and
+  parentage are the only facts a transition can be derived from.
+- `resolveShirokoWearNavigationDirection(from, to, override)`: pure and total.
+  Parentage beats depth numbers; an app-supplied override runs first, which is
+  where a host says "entering onboarding from Settings is still a forward move"
+  without the library knowing either screen exists.
+- `shirokoWearPageTransition` (spatial continuity, incl. the `targetContentZIndex`
+  rule that keeps a page from tearing at the seam on a round bezel),
+  `shirokoWearLoadingContentTransition`, and the two named easings
+  (`ShirokoWearEmphasizedDecelEasing`, `ShirokoWearAccelEasing`).
+- `ShirokoWearAmbient` in `shirokowear`: top spotlight with 600ms per-route
+  cross-fade and breathing that only runs while a task is in flight. Colour is
+  resolved through `ShirokoWearAmbientPalette` (route key → colour, provided by
+  the app), so renaming screens never touches the library.
+- `ShirokoWearSpotlights`: the ramp the source app named after its screens
+  (`TarotSpotlightColor`, `MuyuSpotlightColor`, `PulseSpotlightColor`) is now named
+  by hue — violet / amber / teal / jade / emerald / sandwood — so a health app does
+  not have to reach for a divination word to get a green light.
+
+### Changed
+
+- Unrelated routes at the same depth now transition as `LATERAL`. The source app
+  returned `FORWARD` here, sliding a whole new page in for what is a peer change.
+  A host that wants the old behaviour passes a direction override.
 - `sample` module: token smoke screen that consumes every local.
 - Publishing: `io.github.jinlinahida:shirokowear-ui` / `:shirokowear-navigation`
   via vanniktech maven-publish, full POM, Dokka javadoc + sources, signing gated on
@@ -64,12 +93,16 @@ only allowed in pre-releases.
 
 ### Notes
 
-- Verified by JVM tests (10 assertions, 0 failures): scale mapping, bezel geometry
+- Verified by JVM tests (21 assertions, 0 failures): scale mapping, bezel geometry
   and runtime re-application (`ShirokoWearDimensTest`); waveform table validity,
   amplitude ordering and pulse structure across all 9 gestures x 3 intensities
-  (`ShirokoWearHapticsTest`).
-- Verified by compilation only: the gallery APK builds and consumes every public
-  entry point.
-- **Not verified**: crown scrolling, haptic waveforms, round-bezel clipping and
-  frame rate. No watch or Wear emulator was attached during this change, so no
-  claim is made about them (AGENTS.md verification policy).
+  (`ShirokoWearHapticsTest`); palette resolution, fallback precedence and merge
+  semantics (`ShirokoWearAmbientPaletteTest`); direction resolution incl.
+  parentage-over-depth, same-route lateral and app override
+  (`ShirokoWearRouteTest`).
+- Verified by compilation only: the gallery APK and both AARs build, and the
+  gallery consumes every public entry point.
+- **Not verified**: crown scrolling, haptic waveforms, transition smoothness,
+  round-bezel clipping and frame rate. No watch or Wear emulator was attached
+  during these changes, so no claim is made about them (AGENTS.md verification
+  policy).

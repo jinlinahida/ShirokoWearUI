@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.Density
 public fun ShirokoWearTheme(
     colors: ShirokoWearColors = shirokoWearInkColors(),
     dimens: ShirokoWearDimens = shirokoWearDimens(),
+    ambientPalette: ShirokoWearAmbientPalette = ShirokoWearAmbientPalette(),
     contentScale: ShirokoWearContentScale = dimens.contentScale,
     screenShape: ShirokoWearScreenShape = dimens.screenShape,
     animationsEnabled: Boolean = true,
@@ -45,6 +46,7 @@ public fun ShirokoWearTheme(
     CompositionLocalProvider(
         LocalShirokoWearColors provides colors,
         LocalShirokoWearDimens provides resolvedDimens,
+        LocalShirokoWearAmbientPalette provides ambientPalette,
         LocalShirokoWearAnimationsEnabled provides animationsEnabled,
         LocalShirokoWearRotaryScrollingEnabled provides rotaryScrollingEnabled,
         LocalShirokoWearHapticFeedbackEnabled provides hapticFeedbackEnabled,
@@ -61,6 +63,9 @@ public object ShirokoWearTheme {
 
     public val dimens: ShirokoWearDimens
         @Composable @ReadOnlyComposable get() = LocalShirokoWearDimens.current
+
+    public val ambientPalette: ShirokoWearAmbientPalette
+        @Composable @ReadOnlyComposable get() = LocalShirokoWearAmbientPalette.current
 
     public val animationsEnabled: Boolean
         @Composable @ReadOnlyComposable get() = LocalShirokoWearAnimationsEnabled.current
