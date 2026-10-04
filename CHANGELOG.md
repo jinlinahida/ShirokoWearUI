@@ -58,6 +58,35 @@ only allowed in pre-releases.
   Expressive sparkle → circle → scallop → squircle, 2400ms cycle).
 - `sample` is now a component gallery, not a smoke screen.
 
+### Added — intro layer (`ui.intro`)
+
+- `ShirokoWearVideoBackdrop`: full-bleed looping `MediaPlayer` + `SurfaceView`
+  backdrop with an optional poster. The hard part is the asynchronous lifecycle, and
+  it is encoded rather than re-learned per app: release flags stop any callback from
+  touching a released player, `surfaceDestroyed` detaches the display, and every
+  failure path (copy, IO, illegal state) leaves the poster visible because a
+  backdrop must never blank a screen. With animations off, no player and no
+  `SurfaceView` are created at all.
+- `ShirokoWearVideoSource`: `CachedResource(resId, fileName)` / `FromFile` /
+  `FromUri`. The clip itself never ships in the AAR — a multi-MB loop is one app's
+  brand. `CachedResource` copies into **cacheDir**, deliberately not filesDir, so a
+  decorative 10MB asset stays reclaimable; re-copying after eviction is the accepted
+  cost. `content://` goes through the `setDataSource(Context, Uri)` overload.
+- `isPlaybackEnabled` is a gate, not a hint: a Compose screen stays composed while
+  its Activity is backgrounded, so without it a loop keeps decoding with nobody
+  watching. The host passes its own resumed state — the library holds no lifecycle
+  dependency.
+- `ShirokoWearEnterPrompt`: the breathing dot + caption affordance (5dp dot, ±5dp at
+  1100ms EaseInOutCubic, one-shot fade + half-height slide-in reveal). The float moves
+  `translationY` in a graphics layer so it costs no layout pass, and the infinite
+  transition is not created when animations are off.
+- `ShirokoWearTapToAdvance`: full-bleed tap area with no ripple and no press-scale —
+  the confirmation is haptic, because a visual reaction would fight the backdrop.
+- `ShirokoWearGradientTitle` + pure `gradientAnnotatedString`: horizontal colour ramp
+  wordmark. Gradient stops are required, never defaulted (brand colour is the app's
+  identity); fewer than two stops degrades to plain text instead of an empty brush
+  that renders nothing.
+
 ### Added — route contract, transitions and ambient light
 
 - `shirokowear-navigation`: `ShirokoWearRoute` (`routeKey` / `depth` / `backKey`)
@@ -140,3 +169,10 @@ only allowed in pre-releases.
   round-bezel clipping and frame rate. No watch or Wear emulator was attached
   during these changes, so no claim is made about them (AGENTS.md verification
   policy).
+- **Not verified** for the intro layer specifically: video decode/start/teardown on
+  real hardware, the breathing dot's actual frame cost on a watch, and the reveal
+  timing. Only `gradientAnnotatedString` is JVM-tested (3 assertions); the MediaPlayer
+  and animation paths need a device.
+- Not migrated yet from the source app's welcome screen: the step machine that hosts
+  these pieces (awaiting a decision), the disclaimer/mode-selection step content, and
+  the persisted "onboarding seen" flag — the last two are app state by design.
