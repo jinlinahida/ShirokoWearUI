@@ -1,9 +1,12 @@
+import org.gradle.api.publish.PublishingExtension
+
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.vanniktech.maven.publish) apply false
+    alias(libs.plugins.kover) apply false
 }
 
 // Local and snapshot builds must never compete with an immutable Maven Central
@@ -13,7 +16,13 @@ val isPublishingToMavenLocal = gradle.startParameter.taskNames.any {
     name == "publishToMavenLocal" || name.endsWith("PublicationToMavenLocal")
 }
 
-val defaultPublicationVersion = if (isPublishingToMavenLocal) {
+// `-PsnapshotPublication=true` (set by the snapshot workflow) publishes the
+// SNAPSHOT line to GitHub Packages instead of Central.
+val isPublishingSnapshot = providers.gradleProperty("snapshotPublication")
+    .map { it.toBooleanStrict() }
+    .getOrElse(false)
+
+val defaultPublicationVersion = if (isPublishingToMavenLocal || isPublishingSnapshot) {
     libs.versions.mavenLocalVersion.get()
 } else {
     libs.versions.version.get()
@@ -30,5 +39,27 @@ allprojects {
     group = "io.github.jinlinahida"
     version = publicationVersion
 
-    extra["signPublications"] = canSign
+    extra["signPublications"] = canSign && !isPublishingSnapshot
+
+    plugins.withId("maven-publish") {
+        extensions.configure<PublishingExtension> {
+            if (isPublishingSnapshot) {
+                repositories {
+                    maven {
+                        name = "GitHubPackages"
+                        url = uri(
+                            "https://maven.pkg.github.com/" +
+                                providers.environmentVariable("GITHUB_REPOSITORY")
+                                    .getOrElse("jinlinahida/ShirokoWearUI"),
+                        )
+                        credentials {
+                            username = providers.environmentVariable("GITHUB_ACTOR")
+                                .getOrElse("jinlinahida")
+                            password = providers.environmentVariable("GITHUB_TOKEN").orNull
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

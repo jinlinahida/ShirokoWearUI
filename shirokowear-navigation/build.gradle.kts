@@ -1,8 +1,28 @@
+import com.vanniktech.maven.publish.SonatypeHost
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.vanniktech.maven.publish)
+    alias(libs.plugins.kover)
+}
+
+kover {
+    reports {
+        filters {
+            includes {
+                classes(
+                    "io.github.jinlinahida.shirokowear.navigation.ShirokoWearRouteKt*",
+                )
+            }
+        }
+        verify {
+            rule("Direction resolution stays covered") {
+                minBound(80)
+            }
+        }
+    }
 }
 
 kotlin {
@@ -50,8 +70,7 @@ mavenPublishing {
         version = project.version.toString()
     )
 
-    // Central target is enabled through `mavenCentralPublishing=true` in
-    // gradle.properties so this file stays valid across plugin versions.
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
     if (project.extra["signPublications"] == true) {
         signAllPublications()
     }

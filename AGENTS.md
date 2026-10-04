@@ -55,11 +55,41 @@
   直连本库源码。
 - `publishToMavenLocal` 自动使用 `mavenLocalVersion`（SNAPSHOT 线），避免与
   Central 上不可变的正式版撞号。
-- main 合并 → CI 发 GitHub Packages 快照。打 tag → CI 发 Maven Central。
-- **正式版发布前置条件**：至少一个消费 App 在源码轨跑过一轮，且真机项已按型号确认。
-  否则只发快照。
+- 版本号的唯一真源是 `gradle/libs.versions.toml`：`version` = 正式版线，
+  `mavenLocalVersion` = 本地与快照线。打 tag `vX.Y.Z` 时 `X.Y.Z` 必须与 `version`
+  一致（release workflow 用 `${GITHUB_REF_NAME#v}` 覆盖 `publicationVersion`）。
+
+### CI 三条轨道
+
+| workflow | 触发 | 做什么 |
+|---|---|---|
+| `verify.yml` | 任意分支 push / PR / 被复用 | 单测 + `koverVerify` 门禁 + 出 AAR 与 gallery APK |
+| `publish-snapshot.yml` | main 合并 | `-PsnapshotPublication=true` 发 SNAPSHOT 线到 **GitHub Packages**（不签名、可覆盖） |
+| `release.yml` | 打 `v*` tag | `publishAndReleaseToMavenCentral` 发 **Maven Central**（需签名，不可覆盖） |
+
+两个 publish 轨道都 `needs: verify`，绕不开门禁。
+
+- **任务名绑死在 vanniktech 0.30.0**：`publishAndReleaseToMavenCentral`（0.37 起改叫
+  `publishToMavenCentral` + `mavenCentralAutomaticPublishing`）。升级插件必须同时改两个
+  workflow，否则 CI 会静默不发布或直接失败。
 - Central 需要签名与 sources/javadoc：本地无 `signingInMemoryKey` 时根构建自动跳过签名，
   CI 里通过 `ORG_GRADLE_PROJECT_signingInMemoryKey` 等变量开启。
+- **正式版发布前置条件**：至少一个消费 App 在源码轨跑过一轮，且真机项已按型号确认。
+  否则只发快照。
+
+### 覆盖率门禁为什么要求"纯核"
+
+`koverVerify` 只统计 `ShirokoWearDimens*`、`ShirokoWearHapticWaveform*`、
+`ShirokoWearAmbientPalette*`（以及 navigation 里的 `ShirokoWearRouteKt*`），门槛 80%。
+
+因此有一条结构约束：**`ShirokoWearHapticWaveform.kt` 不得 import 任何 `android.*`**。
+波形表与平台派发（`toEffect()`、Vibrator、厂商常量）分文件放，不是风格问题——放一起时
+门禁把不可 JVM 测试的马达驱动算进分母，实测从 80% 掉到 73%，门禁就会逼你写假测试。
+新增纯逻辑同理：与 Android 副作用分文件。
+
+同理，**不要**用 JVM 测试去断言 Compose 快照调度器（例如 `derivedStateOf` 何时失效）：
+同一份源码在 debug 变体通过、release 变体失败，那种测试日后只会被删掉。只断言本库自己
+拥有的映射与状态变更。
 
 ## 许可与归属
 

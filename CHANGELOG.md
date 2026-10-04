@@ -86,6 +86,40 @@ only allowed in pre-releases.
 - Unrelated routes at the same depth now transition as `LATERAL`. The source app
   returned `FORWARD` here, sliding a whole new page in for what is a peer change.
   A host that wants the old behaviour passes a direction override.
+
+### Added — CI lanes, coverage gate, snapshot publication
+
+- `ShirokoWearHapticWaveform.kt`: the gesture vocabulary, `ShirokoWearStep` /
+  `ShirokoWearWaveform` and the waveform table moved into a file with **no
+  `android.*` imports**. `toEffect()` and the vibrator/`VibrationAttributes`
+  dispatch stayed in `ShirokoWearHaptics.kt`. This is a structural requirement of
+  the coverage gate, not a style preference: while the table and the platform
+  plumbing shared a file, the gate measured the motor driver too and fell to 73%.
+- Coverage gate (Kover 0.9.11) on the deterministic core only —
+  `ShirokoWearDimens*`, `ShirokoWearHapticWaveform*`, `ShirokoWearAmbientPalette*`,
+  and `ShirokoWearRouteKt*` in the navigation module — at `minBound(80)` line
+  coverage. Composables are excluded deliberately; a coverage number for them
+  without a device would be theatre.
+- Snapshot lane: `-PsnapshotPublication=true` flips the version to
+  `mavenLocalVersion` and registers a GitHub Packages repository authenticated with
+  the workflow's `GITHUB_TOKEN`, so trials of unfinished components never consume an
+  immutable Central version number. Signing is skipped on this lane.
+- Workflows: `verify.yml` (any branch / PR / `workflow_call`),
+  `publish-snapshot.yml` (main), `release.yml` (`v*` tag →
+  `publishAndReleaseToMavenCentral`, `-PpublicationVersion` derived from the tag).
+  Both publication lanes declare `needs: verify`.
+- `publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)` wired explicitly; the
+  `mavenCentralPublishing` gradle property turned out to be a no-op on 0.30.0.
+
+### Fixed
+
+- `PaddingValues` assertions in tests used a non-existent `start`/`top` API and
+  `Snapshot.withMutableSnapshot("name")`, which has no label parameter in this
+  Compose version. Tests now use value equality on `PaddingValues`.
+- Dropped a test that asserted *when* `derivedStateOf` invalidates: it passed on the
+  debug variant and failed on the release variant of identical source, i.e. it was
+  testing Compose's snapshot scheduler rather than this library. Replaced with
+  assertions on the mappings `apply()` actually owns.
 - `sample` module: token smoke screen that consumes every local.
 - Publishing: `io.github.jinlinahida:shirokowear-ui` / `:shirokowear-navigation`
   via vanniktech maven-publish, full POM, Dokka javadoc + sources, signing gated on

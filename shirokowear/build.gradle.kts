@@ -1,8 +1,34 @@
+import com.vanniktech.maven.publish.SonatypeHost
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.vanniktech.maven.publish)
+    alias(libs.plugins.kover)
+}
+
+// The coverage gate covers deterministic parts only: bezel geometry, the waveform
+// table, palette resolution. `ShirokoWearAmbientKt` is excluded on purpose — it is
+// a @Composable, and a coverage number for it without a device or Robolectric
+// would be theatre.
+kover {
+    reports {
+        filters {
+            includes {
+                classes(
+                    "io.github.jinlinahida.shirokowear.ui.ShirokoWearDimens*",
+                    "io.github.jinlinahida.shirokowear.ui.ShirokoWearHapticWaveform*",
+                    "io.github.jinlinahida.shirokowear.ui.ShirokoWearAmbientPalette*",
+                )
+            }
+        }
+        verify {
+            rule("Deterministic design logic stays covered") {
+                minBound(80)
+            }
+        }
+    }
 }
 
 kotlin {
@@ -54,8 +80,7 @@ mavenPublishing {
         version = project.version.toString()
     )
 
-    // Central target is enabled through `mavenCentralPublishing=true` in
-    // gradle.properties so this file stays valid across plugin versions.
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
     if (project.extra["signPublications"] == true) {
         signAllPublications()
     }

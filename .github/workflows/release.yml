@@ -1,0 +1,56 @@
+name: Release to Maven Central
+
+# Central artefacts are immutable: once 0.1.0-alpha01 exists it can never be
+# replaced. This workflow only runs on an explicit tag, and AGENTS.md requires a
+# consuming app to have validated the build on a real watch before the tag exists.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    uses: ./.github/workflows/verify.yml
+
+  release:
+    name: Publish and release
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;34.0.0'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # `publishAndReleaseToMavenCentral` uploads, validates and releases in one
+      # shot (vanniktech 0.30.0 task name; newer lines call it
+      # `publishToMavenCentral` + `mavenCentralAutomaticPublishing`).
+      # Configuration cache is disabled because the plugin cannot use it here.
+      - name: Publish to Maven Central
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: >-
+          ./gradlew --no-daemon --no-configuration-cache
+          -PpublicationVersion=${GITHUB_REF_NAME#v}
+          publishAndReleaseToMavenCentral

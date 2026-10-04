@@ -75,6 +75,31 @@ The Galaxy Watch waveforms are HAL-dependent. On non-Samsung wearables the syste
 falls back to the standard Wear 4 constants (`18` / `19` / `20`) and then to
 short-stroke one-shot pulses, so the tactile signature differs by device by design.
 
+## Publishing and CI
+
+Three lanes, and neither publication lane can skip verification:
+
+| Workflow | Trigger | Result |
+|---|---|---|
+| `verify.yml` | any branch push, PR, or called by the lanes below | unit tests + `koverVerify` coverage gate + AARs + gallery APK |
+| `publish-snapshot.yml` | merge to `main` | `-SNAPSHOT` line to GitHub Packages (overwriteable, unsigned) |
+| `release.yml` | `vX.Y.Z` tag | `publishAndReleaseToMavenCentral` (signed, **immutable**) |
+
+To trial an unreleased component from another app on the same machine:
+
+```kotlin
+includeBuild("~/Documents/ShirokoWearUI") {
+    dependencySubstitution {
+        substitute(module("io.github.jinlinahida:shirokowear-ui"))
+            .using(project(":shirokowear"))
+    }
+}
+```
+
+That source-substitution path, not publishing, is how this library should be
+developed day to day. Central versions are cut only once a consuming app has been
+run against them — see the release precondition in `AGENTS.md`.
+
 ## Verification policy
 
 Release notes state, per feature: what was verified by JVM tests, what was verified

@@ -10,6 +10,7 @@ androidxTestJunit = "1.2.1"
 # 0.37.x requires AGP >= 8.13; 0.30.0 is the last line that pairs with the
 # AGP 8.7.3 toolchain the consuming apps are on.
 vanniktechMavenPublish = "0.30.0"
+kover = "0.9.11"
 
 # Release line published to Maven Central.
 version = "0.1.0-alpha01"
@@ -36,3 +37,4 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktechMavenPublish" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
