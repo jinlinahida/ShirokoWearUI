@@ -9,9 +9,9 @@ import androidx.compose.ui.graphics.Color
  * Every colour the design system owns, resolved once and shared through
  * [LocalShirokoWearColors].
  *
- * The card quartet is the Wear-specific "frosted ink" surface that this system
- * exists to preserve: a hairline diagonal sheen border over a 30% alpha grey,
- * so the ambient spotlight behind a card keeps bleeding through it.
+ * The card quartet is the Wear-specific "frosted ink" surface this system exists
+ * to preserve: a hairline diagonal sheen border over a 30% alpha grey, so the
+ * ambient spotlight behind a card keeps bleeding through it.
  */
 @Stable
 public class ShirokoWearColors(
@@ -22,6 +22,9 @@ public class ShirokoWearColors(
     contentPrimary: Color,
     contentDisabled: Color,
     spotlightDefault: Color,
+    accentCopper: Color,
+    accentGold: Color,
+    wheelSlotBackground: Color,
 ) {
     public val cardBorder: Color by mutableStateOf(cardBorder)
     public val cardBackground: Color by mutableStateOf(cardBackground)
@@ -29,13 +32,22 @@ public class ShirokoWearColors(
     /** Pink-red ring used when a card is marked as current or selected. */
     public val cardHighlight: Color by mutableStateOf(cardHighlight)
 
-    /** Near-transparent fill for outlined buttons (40% of [cardBackground]). */
+    /** Near-transparent fill for outlined buttons (half of [cardBackground]). */
     public val outlineButtonBackground: Color by mutableStateOf(outlineButtonBackground)
     public val contentPrimary: Color by mutableStateOf(contentPrimary)
     public val contentDisabled: Color by mutableStateOf(contentDisabled)
 
     /** Fallback ambient light colour when a route declares no spotlight. */
     public val spotlightDefault: Color by mutableStateOf(spotlightDefault)
+
+    /** Brushed brass: wheel slot edge, mechanical affordances. */
+    public val accentCopper: Color by mutableStateOf(accentCopper)
+
+    /** Selected-wheel text and other "this one is chosen" marks. */
+    public val accentGold: Color by mutableStateOf(accentGold)
+
+    /** The recessed trough a wheel picker highlights the active row inside. */
+    public val wheelSlotBackground: Color by mutableStateOf(wheelSlotBackground)
 
     public fun copy(
         cardBorder: Color = this.cardBorder,
@@ -45,6 +57,9 @@ public class ShirokoWearColors(
         contentPrimary: Color = this.contentPrimary,
         contentDisabled: Color = this.contentDisabled,
         spotlightDefault: Color = this.spotlightDefault,
+        accentCopper: Color = this.accentCopper,
+        accentGold: Color = this.accentGold,
+        wheelSlotBackground: Color = this.wheelSlotBackground,
     ): ShirokoWearColors = ShirokoWearColors(
         cardBorder = cardBorder,
         cardBackground = cardBackground,
@@ -53,6 +68,9 @@ public class ShirokoWearColors(
         contentPrimary = contentPrimary,
         contentDisabled = contentDisabled,
         spotlightDefault = spotlightDefault,
+        accentCopper = accentCopper,
+        accentGold = accentGold,
+        wheelSlotBackground = wheelSlotBackground,
     )
 }
 
@@ -65,4 +83,7 @@ public fun shirokoWearInkColors(): ShirokoWearColors = ShirokoWearColors(
     contentPrimary = Color.White,
     contentDisabled = Color.White.copy(alpha = 0.38f),
     spotlightDefault = Color(0xFF64B5F6),
+    accentCopper = Color(0xFFC5A059),
+    accentGold = Color(0xFFFFD700),
+    wheelSlotBackground = Color(0xFF221E18),
 )
