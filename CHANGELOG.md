@@ -4,7 +4,12 @@ All notable changes to ShirokoWear UI are documented here. Versions follow
 `MAJOR.MINOR.PATCH` with `-alphaNN` / `-betaNN` pre-releases; breaking changes are
 only allowed in pre-releases.
 
-## 0.1.0-alpha01 (unreleased)
+## 0.1.0-alpha01 — 2026-10-05
+
+First published version. Pre-release on purpose: device behaviour (crown scrolling,
+haptic waveforms, round-bezel clipping, video decode, frame rate) is still unverified,
+and an alpha is the mechanism for getting that checked on hardware. See "Notes" below
+for exactly what is and is not verified.
 
 ### Added
 
