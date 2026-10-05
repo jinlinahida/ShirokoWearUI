@@ -63,6 +63,27 @@
   `mavenLocalVersion` = 本地与快照线。打 tag `vX.Y.Z` 时 `X.Y.Z` 必须与 `version`
   一致（release workflow 用 `${GITHUB_REF_NAME#v}` 覆盖 `publicationVersion`）。
 
+### 发布前必须自检签名
+
+打 tag 之前先跑一次：
+
+```
+./scripts/preflight-release.sh <8位密钥ID>
+```
+
+它用与 CI 完全相同的路径（`publishToMavenLocal` + in-memory 签名）在本地验证 Gradle
+能否读取并签署你的密钥，几分钟出结论。不要拿真实 tag 去试错。
+
+背景（首次发布尝试的实测教训）：`v0.1.0-alpha01` 的第一次 CI 发布在
+`:shirokowear:signMavenPublication` 失败，报 `Could not read PGP secret key`——失败点在
+签名，**根本没接触到 Central**，所以命名空间与 token 都不是原因；Central 全 404 也确认了
+版本号没有被占用。本机 GnuPG 2.5.21 用 `%no-protection` 生成的密钥可以被 Gradle 正常签署
+（对照实验通过），而带口令的密钥在 CI 上读不出来；具体是 AEAD 私钥包装不被 bouncycastle
+支持、还是粘贴进 secret 时 armor 首尾行/空行损坏，**尚未确诊**——这正是加这条自检的原因。
+
+已知约束：GitHub Actions 的日志对匿名请求返回 403、网页端是登录墙，所以失败原因只能由
+你在本地复现或在 Portal/Actions 页面读取后带回。
+
 ### CI 三条轨道
 
 | workflow | 触发 | 做什么 |
