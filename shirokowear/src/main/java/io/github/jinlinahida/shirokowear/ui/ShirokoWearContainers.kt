@@ -28,8 +28,12 @@ import androidx.wear.compose.material3.ScreenScaffold
 /**
  * Crown behaviour must survive the animation toggle: with animations off, the
  * fish-eye scale and edge fade flatten to 1.0, but the list still scrolls.
+ *
+ * Public because a host that builds its own `ScalingLazyColumn` needs the same
+ * degradation rule rather than re-inventing it — the readable `edgeScale`/`edgeAlpha`
+ * also make it assertable.
  */
-internal fun resolveScalingParams(animationsEnabled: Boolean): ScalingParams =
+public fun shirokoWearScalingParams(animationsEnabled: Boolean): ScalingParams =
     if (animationsEnabled) defaultAnimatedScalingParams else defaultFlatScalingParams
 
 private val defaultAnimatedScalingParams: ScalingParams by lazy {
@@ -102,7 +106,7 @@ public fun ShirokoWearScalingRotaryColumn(
     contentPadding: PaddingValues = ShirokoWearTheme.dimens.screenPadding,
     itemSpacing: Dp = 8.dp,
     autoCentering: AutoCenteringParams? = AutoCenteringParams(itemIndex = 0),
-    scalingParams: ScalingParams = resolveScalingParams(animationsEnabled),
+    scalingParams: ScalingParams = shirokoWearScalingParams(animationsEnabled),
     content: ScalingLazyListScope.() -> Unit,
 ) {
     val focusRequester = remember { FocusRequester() }
