@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.graphics.shapes)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.junit)
 }

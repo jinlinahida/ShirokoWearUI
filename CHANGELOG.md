@@ -223,3 +223,28 @@ only allowed in pre-releases.
 - `sample` module: updated with three dedicated routes (`waveform`, `settings`, `streaming`)
   exercising the new primitives in the gallery regression harness.
 
+
+### Fixed
+
+- `bufferTextDeltas` no longer depends on the wall clock. It polled
+  `System.currentTimeMillis()` from a ticker while the collector flushed
+  independently, so both the batching timing and its test were machine-dependent:
+  `ShirokoWearStreamingTest.bufferTextDeltasAggregatesRapidTokens` failed and passed
+  on consecutive runs of identical code. Windows are now opened by the first pending
+  token and closed by a single `delay(windowMs)` job, with one flush path.
+- Tests for it use `runTest` virtual time and assert exact emissions
+  (`listOf("Shiroko", "Wear")`, `listOf("A", "B")`, `listOf("ABC")`) instead of
+  `size <= 2`. Verified deterministic across three forced re-runs.
+- Tail-of-stream flush no longer leaves a duplicate behind: the pending window is
+  emptied at completion, so the timer that is still due ships nothing.
+- `windowMs <= 0` is rejected at the boundary instead of producing a zero-length
+  delay loop.
+- `kotlinx-coroutines-test` pinned to **1.9.0**, the version Compose 1.9.0 already
+  resolves — a newer test artifact would have raised the runtime for consuming apps
+  through the composite build.
+
+### Notes
+
+- `shirokoWearScalingParams` is now public so a host can reuse the fish-eye
+  degradation rule instead of re-stating it; its assertions moved here from the
+  consuming app together with the rule.
