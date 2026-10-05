@@ -248,3 +248,41 @@ only allowed in pre-releases.
 - `shirokoWearScalingParams` is now public so a host can reuse the fish-eye
   degradation rule instead of re-stating it; its assertions moved here from the
   consuming app together with the rule.
+
+### Fixed — six defects found by auditing a sibling app (wearfinder)
+
+- **Restored the OEM tick waveform.** When no decor view is available the engine now
+  prefers `VibrationEffect.createPredefined(EFFECT_TICK)` on API 29+ and only
+  synthesises a one-shot if the HAL rejects it. The source app had this and the port
+  dropped it, which meant ticks on Samsung/Xiaomi wearables lost the waveform the
+  vendor tuned for its own LRA.
+- **Guarded `HapticFeedbackConstants.CONFIRM`.** It is an API 30 constant while the
+  library's `minSdk` is 26; on 26-29 the value is undefined, so the strongest click
+  silently did nothing. Now falls back to `LONG_PRESS` below API 30.
+- **Added the two missing gestures.** `TICK` (5/130, 8/180, 10/230) for steppers,
+  wheels, pagers and slider notches; `CONFIRM` (two strikes with a 16-20 ms gap, i.e.
+  wider than `TOGGLE_ON`'s 10 ms latch) for favouriting/saving. `ShirokoWearWheelPicker`
+  now uses `tick()` — a detent is a graduation, not a button press.
+- **Crown focus is reclaimed when the setting is re-enabled.** The containers now
+  re-`requestFocus()` on `rotaryEnabled` flipping true; previously only
+  `requestFocusOnHierarchyActive()` existed, so turning the crown back on in Settings
+  left the list un-focused until the user left and came back.
+- **Turning haptics on is now audible.** `ShirokoWearHaptics.preview()` is the single
+  sanctioned bypass of the mute gate, and `ShirokoWearToggleCard` gained
+  `confirmEnableAudibly` (default false) for the haptics master switch row. Left
+  `false` everywhere else, because firing the motor for every toggle a muted user
+  flips would be worse than the original silence.
+- **`ShirokoWearHapticIntensity` now carries its localised label** (`labelRes` +
+  `displayName()`, strings in `values/` and `values-en/`) and a tolerant
+  `fromPersisted()` that accepts an enum name, a bare ordinal or a stored label and
+  only falls back to STANDARD on garbage — so a host migrating old SharedPreferences
+  keys no longer resets the user's level silently.
+
+### Noted
+
+- Auditing also *rejected* one claimed defect: `ScreenScaffold`'s `timeText` and
+  `scrollIndicator` have Kotlin defaults (verified in
+  `compose-material3-1.6.2-api.jar` bytecode: `startDefaults`/`getDefaultsInvalid`),
+  so the containers already show the clock and scroll indicator without passing them.
+  Open question left in code: the containers pass `contentPadding` explicitly, which
+  overrides the scaffold's own adaptive window-inset padding.

@@ -46,6 +46,12 @@ public enum class ShirokoWearHapticKind {
     /** Single key-like strike. */
     CLICK,
 
+    /** Fine graduation: stepper, wheel detent, pager advance, slider notch. */
+    TICK,
+
+    /** Favouriting / confirming: two strikes with a deliberately wide gap. */
+    CONFIRM,
+
     /** Detent into the on position: compact two-stage latch. */
     TOGGLE_ON,
 
@@ -83,6 +89,28 @@ public fun shirokoWearWaveform(
         ShirokoWearHapticIntensity.LIGHT -> ShirokoWearWaveform(listOf(ShirokoWearStep(8L, 170)))
         ShirokoWearHapticIntensity.STANDARD -> ShirokoWearWaveform(listOf(ShirokoWearStep(12L, 235)))
         ShirokoWearHapticIntensity.STRONG -> ShirokoWearWaveform(listOf(ShirokoWearStep(16L, 255)))
+    }
+
+    ShirokoWearHapticKind.TICK -> when (intensity) {
+        // Sub-threshold ticks: too light to read as a button, firm enough to feel
+        // once per detent while a wheel or stepper is spinning.
+        ShirokoWearHapticIntensity.LIGHT -> ShirokoWearWaveform(listOf(ShirokoWearStep(5L, 130)))
+        ShirokoWearHapticIntensity.STANDARD -> ShirokoWearWaveform(listOf(ShirokoWearStep(8L, 180)))
+        ShirokoWearHapticIntensity.STRONG -> ShirokoWearWaveform(listOf(ShirokoWearStep(10L, 230)))
+    }
+
+    ShirokoWearHapticKind.CONFIRM -> when (intensity) {
+        // Gap of 16-20ms between the two strikes, versus 10ms for TOGGLE_ON: this
+        // has to read as "saved", not as a switch clatching.
+        ShirokoWearHapticIntensity.LIGHT -> ShirokoWearWaveform(
+            listOf(ShirokoWearStep(8L, 160), ShirokoWearStep(20L, 0), ShirokoWearStep(10L, 190)),
+        )
+        ShirokoWearHapticIntensity.STANDARD -> ShirokoWearWaveform(
+            listOf(ShirokoWearStep(10L, 210), ShirokoWearStep(18L, 0), ShirokoWearStep(12L, 255)),
+        )
+        ShirokoWearHapticIntensity.STRONG -> ShirokoWearWaveform(
+            listOf(ShirokoWearStep(12L, 255), ShirokoWearStep(16L, 0), ShirokoWearStep(14L, 255)),
+        )
     }
 
     ShirokoWearHapticKind.TOGGLE_ON -> when (intensity) {

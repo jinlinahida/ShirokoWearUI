@@ -4,4 +4,7 @@
     <string name="shirokowear_action_retry">Retry</string>
     <string name="shirokowear_action_reset">Reset</string>
     <string name="shirokowear_streaming_loading">Generating…</string>
+    <string name="shirokowear_haptic_light">Light</string>
+    <string name="shirokowear_haptic_standard">Standard</string>
+    <string name="shirokowear_haptic_strong">Strong</string>
 </resources>

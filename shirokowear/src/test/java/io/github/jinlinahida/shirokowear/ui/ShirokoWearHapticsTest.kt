@@ -89,4 +89,69 @@ public class ShirokoWearHapticsTest {
         assertEquals(3, on.steps.size)
         assertEquals(1, off.steps.size)
     }
+
+    /** A detent tick has to stay far below a click, or a spinning wheel feels like hammering. */
+    @Test
+    public fun tickIsLighterThanClickAtEveryLevel() {
+        for (intensity in ShirokoWearHapticIntensity.entries) {
+            val tick = shirokoWearWaveform(ShirokoWearHapticKind.TICK, intensity)
+            val click = shirokoWearWaveform(ShirokoWearHapticKind.CLICK, intensity)
+            assertTrue(
+                "$intensity tick ${tick.peakAmplitude} must stay below click ${click.peakAmplitude}",
+                tick.peakAmplitude < click.peakAmplitude,
+            )
+            assertEquals(1, tick.steps.size)
+        }
+
+        assertEquals(
+            ShirokoWearWaveform(listOf(ShirokoWearStep(8L, 180))),
+            shirokoWearWaveform(ShirokoWearHapticKind.TICK, ShirokoWearHapticIntensity.STANDARD),
+        )
+    }
+
+    /**
+     * Confirm reads as "saved" rather than "switch clatched" purely because of the
+     * gap: 16-20ms of silence between the strikes against TOGGLE_ON's 10ms.
+     */
+    @Test
+    public fun confirmGapIsWiderThanToggleLatch() {
+        val confirm = shirokoWearWaveform(
+            ShirokoWearHapticKind.CONFIRM,
+            ShirokoWearHapticIntensity.STANDARD,
+        )
+        val latch = shirokoWearWaveform(
+            ShirokoWearHapticKind.TOGGLE_ON,
+            ShirokoWearHapticIntensity.STANDARD,
+        )
+
+        assertEquals(3, confirm.steps.size)
+        assertEquals(0, confirm.steps[1].amplitude)
+        assertEquals(18L, confirm.steps[1].durationMs)
+        assertTrue(
+            "confirm gap ${confirm.steps[1].durationMs} must exceed latch ${latch.steps[1].durationMs}",
+            confirm.steps[1].durationMs > latch.steps[1].durationMs,
+        )
+    }
+
+    /**
+     * Apps persist these levels as whatever their settings screen showed — an enum
+     * name, a localised label, or a bare ordinal. Nothing recognisable may reset the
+     * user's choice to STANDARD behind their back, but unparseable junk must still
+     * resolve to a safe default instead of throwing.
+     */
+    @Test
+    public fun persistedIntensityResolvesTolerantly() {
+        assertEquals(ShirokoWearHapticIntensity.STRONG, ShirokoWearHapticIntensity.fromPersisted("strong"))
+        assertEquals(ShirokoWearHapticIntensity.LIGHT, ShirokoWearHapticIntensity.fromPersisted(" LIGHT "))
+        assertEquals(ShirokoWearHapticIntensity.STANDARD, ShirokoWearHapticIntensity.fromPersisted("1"))
+        assertEquals(
+            ShirokoWearHapticIntensity.STRONG,
+            ShirokoWearHapticIntensity.fromPersisted(
+                "强劲",
+                labelsByValue = mapOf(ShirokoWearHapticIntensity.STRONG to "强劲"),
+            ),
+        )
+        assertEquals(ShirokoWearHapticIntensity.STANDARD, ShirokoWearHapticIntensity.fromPersisted(null))
+        assertEquals(ShirokoWearHapticIntensity.STANDARD, ShirokoWearHapticIntensity.fromPersisted("garbage"))
+    }
 }

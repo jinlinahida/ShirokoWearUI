@@ -4,4 +4,7 @@
     <string name="shirokowear_action_retry">重试</string>
     <string name="shirokowear_action_reset">重置</string>
     <string name="shirokowear_streaming_loading">生成中…</string>
+    <string name="shirokowear_haptic_light">弱</string>
+    <string name="shirokowear_haptic_standard">标准</string>
+    <string name="shirokowear_haptic_strong">强劲</string>
 </resources>

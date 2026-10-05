@@ -81,8 +81,9 @@ public class ShirokoWearHaptics internal constructor(
     public fun play(
         kind: ShirokoWearHapticKind,
         intensity: ShirokoWearHapticIntensity,
+        forcedEnabled: Boolean = false,
     ): Unit {
-        if (!enabled) return
+        if (!enabled && !forcedEnabled) return
 
         val vibrator = resolveVibrator(context)
         if (vibrator != null && vibrator.hasVibrator()) {
@@ -100,16 +101,37 @@ public class ShirokoWearHaptics internal constructor(
             ShirokoWearHapticKind.PULSE_WAVE,
             -> ShirokoWearHapticVendorConstants.TICK
 
+            ShirokoWearHapticKind.TICK -> ShirokoWearHapticVendorConstants.TICK
+
             else -> when (intensity) {
                 ShirokoWearHapticIntensity.LIGHT -> HapticFeedbackConstants.KEYBOARD_TAP
                 ShirokoWearHapticIntensity.STANDARD -> HapticFeedbackConstants.VIRTUAL_KEY
-                ShirokoWearHapticIntensity.STRONG -> HapticFeedbackConstants.CONFIRM
+                // CONFIRM is an API 30 constant; on 26-29 asking the framework for an
+                // undefined value silently drops the strike, so fall back to a
+                // long-press weight which every API level in range understands.
+                ShirokoWearHapticIntensity.STRONG ->
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        HapticFeedbackConstants.CONFIRM
+                    } else {
+                        HapticFeedbackConstants.LONG_PRESS
+                    }
             }
         }
-        performViewHaptic(context, constant, shirokoWearWaveform(kind, intensity))
+        performViewHaptic(
+            context = context,
+            constant = constant,
+            fallback = shirokoWearWaveform(kind, intensity),
+            preferOemTick = constant == ShirokoWearHapticVendorConstants.TICK,
+        )
     }
 
     public fun click(): Unit = play(ShirokoWearHapticKind.CLICK)
+
+    /** Fine detent for steppers, wheels, pagers and slider notches. */
+    public fun tick(): Unit = play(ShirokoWearHapticKind.TICK)
+
+    /** Two-strike "saved / favourited" confirmation, wider gap than [toggle]. */
+    public fun confirm(): Unit = play(ShirokoWearHapticKind.CONFIRM)
 
     public fun toggle(on: Boolean): Unit =
         play(if (on) ShirokoWearHapticKind.TOGGLE_ON else ShirokoWearHapticKind.TOGGLE_OFF)
@@ -126,6 +148,22 @@ public class ShirokoWearHaptics internal constructor(
 
     public fun impact(multiple: Boolean): Unit =
         play(if (multiple) ShirokoWearHapticKind.IMPACT_MULTIPLE else ShirokoWearHapticKind.IMPACT_SINGLE)
+
+    /**
+     * The one sanctioned way around the mute gate.
+     *
+     * Two moments must be audible even while haptics are considered off: the strike
+     * that *confirms the user just switched them on*, and the preview played when
+     * the intensity level changes. Reading the gate at that instant would produce
+     * silence exactly when the user is checking whether the setting works — so this
+     * path deliberately ignores [enabled]. Use it only for those two cases.
+     */
+    public fun preview(
+        kind: ShirokoWearHapticKind = ShirokoWearHapticKind.CLICK,
+        intensity: ShirokoWearHapticIntensity = this.intensity,
+    ) {
+        play(kind, intensity, forcedEnabled = true)
+    }
 }
 
 /**
@@ -165,6 +203,7 @@ private fun performViewHaptic(
     context: Context,
     constant: Int,
     fallback: ShirokoWearWaveform,
+    preferOemTick: Boolean = false,
 ) {
     val view = findDecorView(context)
     val performed = if (view != null) {
@@ -183,7 +222,17 @@ private fun performViewHaptic(
 
     val vibrator = resolveVibrator(context) ?: return
     if (!vibrator.hasVibrator()) return
-    vibrateTouch(vibrator, fallback.toEffect())
+
+    // A tick is the one gesture where the OEM ships a tuned waveform of its own:
+    // EFFECT_TICK (API 29+) is calibrated per device, so prefer it over our synthetic
+    // one-shot and only fall back when the HAL rejects it.
+    val effect = if (preferOemTick && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        runCatching { VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK) }
+            .getOrElse { fallback.toEffect() }
+    } else {
+        fallback.toEffect()
+    }
+    vibrateTouch(vibrator, effect)
 }
 
 private fun findDecorView(context: Context): android.view.View? {

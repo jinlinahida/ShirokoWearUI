@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -80,6 +81,13 @@ public fun ShirokoWearRotaryColumn(
         }
     }
 
+    // `requestFocusOnHierarchyActive` only claims focus when the screen first
+    // becomes active. Turning the crown back on from Settings happens later, so the
+    // list would stay un-focused until the user left and returned.
+    LaunchedEffect(rotaryEnabled) {
+        if (rotaryEnabled) runCatching { focusRequester.requestFocus() }
+    }
+
     ScreenScaffold(scrollState = state, contentPadding = contentPadding) { scaffoldPadding ->
         LazyColumn(
             state = state,
@@ -126,6 +134,10 @@ public fun ShirokoWearScalingRotaryColumn(
         } else {
             modifier
         }
+    }
+
+    LaunchedEffect(rotaryEnabled) {
+        if (rotaryEnabled) runCatching { focusRequester.requestFocus() }
     }
 
     ScreenScaffold(scrollState = state, contentPadding = contentPadding) { scaffoldPadding ->

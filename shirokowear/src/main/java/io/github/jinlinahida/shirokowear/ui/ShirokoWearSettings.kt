@@ -113,6 +113,12 @@ public fun ShirokoWearSettingsItem(
 /**
  * Toggle card entry: switches boolean state on click with animated halo border,
  * translucent tinted background, and dual-gated tactile toggle haptics.
+ *
+ * [confirmEnableAudibly] is for one row only: the haptics master switch itself.
+ * Reading the mute gate at that instant makes turning haptics on silent, so the user
+ * cannot tell whether the setting took effect. Leaving it `false` (the default) keeps
+ * every other toggle properly gated — turning it on for anything else would fire the
+ * motor for a user who muted their watch.
  */
 @UnstableShirokoWearApi
 @Composable
@@ -124,6 +130,7 @@ public fun ShirokoWearToggleCard(
     secondaryLabel: String? = null,
     icon: (@Composable () -> Unit)? = null,
     enabled: Boolean = true,
+    confirmEnableAudibly: Boolean = false,
     shape: Shape = ButtonDefaults.shape,
     highlightColor: Color = ShirokoWearTheme.colors.cardHighlight,
     contentPadding: PaddingValues = ShirokoWearButtonDefaults.compactContentPadding,
@@ -173,7 +180,11 @@ public fun ShirokoWearToggleCard(
     Button(
         onClick = {
             val next = !checked
-            haptics.toggle(next)
+            if (next && confirmEnableAudibly) {
+                haptics.preview(ShirokoWearHapticKind.TOGGLE_ON)
+            } else {
+                haptics.toggle(next)
+            }
             onCheckedChange(next)
         },
         modifier = modifier

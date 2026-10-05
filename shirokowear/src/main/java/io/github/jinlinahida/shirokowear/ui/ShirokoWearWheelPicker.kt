@@ -84,7 +84,9 @@ public fun <T> ShirokoWearWheelPicker(
             .collect { centerIndex ->
                 if (centerIndex != selectedIndex) {
                     onSelectedIndexChanged(centerIndex)
-                    haptics.impact(multiple = false)
+                    // A wheel detent is a graduation, not a button press: TICK is the
+                    // lightest gesture in the set and is the one the OEM tunes itself.
+                    haptics.tick()
                 }
             }
     }

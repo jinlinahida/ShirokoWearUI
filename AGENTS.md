@@ -20,6 +20,10 @@
    新增色值先进 `ShirokoWearColors`，再被组件使用。
 6. **触觉双门控**。任何震动必须同时读 `LocalShirokoWearHapticFeedbackEnabled` 与
    `LocalShirokoWearHapticIntensity`。直接调 Vibrator 的代码视为缺陷。
+   唯一合法豁免是 `ShirokoWearHaptics.preview()`，且只用于两件事：确认"用户刚刚打开
+   触觉"、以及切换强度档位时的试听。组件若需要它，必须显式传参开启
+   （如 `ShirokoWearToggleCard(confirmEnableAudibly = …)`）且默认关闭——把豁免做成默认
+   行为，等于让静音用户每拨一个开关都被震一下，比原来的静默更糟。
 7. **不改变已发布行为**。破坏性变更只允许出现在 `-alpha`/`-beta`；正式版之间只加不减。
    旧 API 用 `@Deprecated("Use … instead")` 指向迁移，至少跨 2 个 minor 才升 ERROR 再删。
 
