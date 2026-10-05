@@ -1,7 +1,8 @@
 name: Release to Maven Central
 
 # Central artefacts are immutable: once a version exists it can never be replaced.
-# This workflow only runs on an explicit tag. Per AGENTS.md the bar differs by
+# Triggered by an explicit tag, or manually for a retry after fixing a secret (a
+# failed release does not consume the version). Per AGENTS.md the bar differs by
 # pre-release level: `-alphaNN` / `-betaNN` may ship on a green CI alone (that is
 # how a component gets tested on a real watch), while an unsuffixed `x.y.z` requires
 # a consuming app to have validated it on the source track and on named hardware.
@@ -9,6 +10,14 @@ name: Release to Maven Central
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: >-
+          发布版本号；留空则用 gradle/libs.versions.toml 的 version。
+          tag 触发时自动取 tag 名（去掉 v 前缀）。
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -52,7 +61,33 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
-        run: >-
-          ./gradlew --no-daemon --no-configuration-cache
-          -PpublicationVersion=${GITHUB_REF_NAME#v}
-          publishAndReleaseToMavenCentral
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          # Version resolution order: explicit dispatch input > tag name > catalog
+          # `version`. A dispatch run on a branch must never fall back to
+          # GITHUB_REF_NAME, or it would try to publish a version literally
+          # named "main".
+          VERSION=""
+          if [ -n "$INPUT_VERSION" ]; then
+            # Whitelist the token shape: the input is interpolated as a single
+            # Gradle property, never as extra CLI arguments.
+            case "$INPUT_VERSION" in
+              *[!0-9A-Za-z.-]*)
+                echo "::error::invalid version token: $INPUT_VERSION" >&2
+                exit 2
+                ;;
+            esac
+            VERSION="$INPUT_VERSION"
+          elif [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+
+          ARGS=(--no-daemon --no-configuration-cache)
+          if [ -n "$VERSION" ]; then
+            ARGS+=("-PpublicationVersion=$VERSION")
+            echo "publishing version: $VERSION"
+          else
+            echo "publishing version taken from gradle/libs.versions.toml"
+          fi
+          ./gradlew "${ARGS[@]}" publishAndReleaseToMavenCentral
