@@ -196,3 +196,30 @@ only allowed in pre-releases.
   `android.*` imports nor `@Composable` code. Adding `ShirokoWearIntroStepsKt*` to the
   filter dropped navigation coverage to 51.85% for the same reason haptics did at 44%
   — pure functions must live in their own file or the gate measures the wrong thing.
+
+### Added — waveforms, settings primitives, and streaming card
+
+- `ShirokoWearLiveWaveCanvas`: real-time glowing physiological/sensor pulse wave
+  rendered with cubic Bezier curve interpolation, horizontal fade gradients, and
+  a leading wavefront energy nucleus circle, extracted from the source app's
+  `PulseWaveCanvas`.
+- `ShirokoWearStripWaveCanvas`: historical/reference waveform strip chart supporting
+  high-density polyline (> 32 points) with subtle baseline and time division tick marks,
+  or sparse Bezier smoothing for typical cycles, extracted from `ReferenceWaveformCanvas`.
+- `waveformLine` color token added to `ShirokoWearColors` (`ShirokoWearSpotlights.emerald`),
+  removing hardcoded pulse color literals.
+- `ShirokoWearSettingsItem`: full-width settings row button with leading icon, bold title,
+  marquee-capable subtitle, and press feedback, generalizing `SettingsModuleButton`.
+- `ShirokoWearToggleCard`: card-level toggle button with animated 1.2dp halo border,
+  translucent background tint, and dual-gated tactile toggle haptics.
+- `ShirokoWearStreamingState<T>` and `Flow<String>.bufferTextDeltas(windowMs)`: pure Kotlin
+  lifecycle state machine (`Idle`, `Loading`, `Streaming`, `Completed`, `Error`) and
+  windowed delta aggregation operator to minimize Wear OS CPU wakeups and Compose
+  recomposition churn during rapid token streaming.
+- `ShirokoWearStreamingCard`: generative card container displaying streaming text, header
+  stage loader, cancel and retry affordances, and completion/error tactile strikes.
+- `res/values/strings.xml` and `values-en/strings.xml`: default library UI labels with
+  the required `shirokowear_` prefix.
+- `sample` module: updated with three dedicated routes (`waveform`, `settings`, `streaming`)
+  exercising the new primitives in the gallery regression harness.
+

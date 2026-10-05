@@ -25,6 +25,7 @@ public class ShirokoWearColors(
     accentCopper: Color,
     accentGold: Color,
     wheelSlotBackground: Color,
+    waveformLine: Color = ShirokoWearSpotlights.emerald,
 ) {
     public val cardBorder: Color by mutableStateOf(cardBorder)
     public val cardBackground: Color by mutableStateOf(cardBackground)
@@ -49,6 +50,9 @@ public class ShirokoWearColors(
     /** The recessed trough a wheel picker highlights the active row inside. */
     public val wheelSlotBackground: Color by mutableStateOf(wheelSlotBackground)
 
+    /** High-precision physiological pulse / sensor data line color. */
+    public val waveformLine: Color by mutableStateOf(waveformLine)
+
     public fun copy(
         cardBorder: Color = this.cardBorder,
         cardBackground: Color = this.cardBackground,
@@ -60,6 +64,7 @@ public class ShirokoWearColors(
         accentCopper: Color = this.accentCopper,
         accentGold: Color = this.accentGold,
         wheelSlotBackground: Color = this.wheelSlotBackground,
+        waveformLine: Color = this.waveformLine,
     ): ShirokoWearColors = ShirokoWearColors(
         cardBorder = cardBorder,
         cardBackground = cardBackground,
@@ -71,6 +76,7 @@ public class ShirokoWearColors(
         accentCopper = accentCopper,
         accentGold = accentGold,
         wheelSlotBackground = wheelSlotBackground,
+        waveformLine = waveformLine,
     )
 }
 
@@ -86,4 +92,5 @@ public fun shirokoWearInkColors(): ShirokoWearColors = ShirokoWearColors(
     accentCopper = Color(0xFFC5A059),
     accentGold = Color(0xFFFFD700),
     wheelSlotBackground = Color(0xFF221E18),
+    waveformLine = ShirokoWearSpotlights.emerald,
 )

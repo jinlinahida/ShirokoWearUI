@@ -8,13 +8,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,26 +35,36 @@ import io.github.jinlinahida.shirokowear.ui.ShirokoWearCard
 import io.github.jinlinahida.shirokowear.ui.ShirokoWearCardButton
 import io.github.jinlinahida.shirokowear.ui.ShirokoWearContentScale
 import io.github.jinlinahida.shirokowear.ui.ShirokoWearDetailField
+import io.github.jinlinahida.shirokowear.ui.ShirokoWearLiveWaveCanvas
 import io.github.jinlinahida.shirokowear.ui.ShirokoWearMorphingLoader
 import io.github.jinlinahida.shirokowear.ui.ShirokoWearResultCard
 import io.github.jinlinahida.shirokowear.ui.ShirokoWearScalingRotaryColumn
 import io.github.jinlinahida.shirokowear.ui.ShirokoWearScreenShape
 import io.github.jinlinahida.shirokowear.ui.ShirokoWearScreenTitle
 import io.github.jinlinahida.shirokowear.ui.ShirokoWearSelectableButton
+import io.github.jinlinahida.shirokowear.ui.ShirokoWearSettingsItem
 import io.github.jinlinahida.shirokowear.ui.ShirokoWearSpotlights
+import io.github.jinlinahida.shirokowear.ui.ShirokoWearStreamingCard
+import io.github.jinlinahida.shirokowear.ui.ShirokoWearStreamingState
+import io.github.jinlinahida.shirokowear.ui.ShirokoWearStripWaveCanvas
 import io.github.jinlinahida.shirokowear.ui.ShirokoWearTheme
+import io.github.jinlinahida.shirokowear.ui.ShirokoWearToggleCard
 import io.github.jinlinahida.shirokowear.ui.ShirokoWearWheelPicker
+import io.github.jinlinahida.shirokowear.ui.UnstableShirokoWearApi
 import io.github.jinlinahida.shirokowear.ui.intro.ShirokoWearEnterPrompt
 import io.github.jinlinahida.shirokowear.ui.intro.ShirokoWearGradientTitle
 import io.github.jinlinahida.shirokowear.ui.intro.ShirokoWearTapToAdvance
 import io.github.jinlinahida.shirokowear.ui.intro.ShirokoWearVideoBackdrop
 import io.github.jinlinahida.shirokowear.ui.rememberShirokoWearHaptics
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Gallery host. Every screen here is a regression harness: a broken token, gate,
  * container or transition shows up on the watch face instead of in a diff.
  */
-class SampleMainActivity : ComponentActivity() {
+public class SampleMainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,6 +77,9 @@ class SampleMainActivity : ComponentActivity() {
                         GalleryRoute.routeKey to ShirokoWearSpotlights.default,
                         DetailRoute.routeKey to ShirokoWearSpotlights.violet,
                         IntroRoute.routeKey to ShirokoWearSpotlights.sandwood,
+                        WaveformRoute.routeKey to ShirokoWearSpotlights.emerald,
+                        SettingsRoute.routeKey to ShirokoWearSpotlights.amber,
+                        StreamingRoute.routeKey to ShirokoWearSpotlights.teal,
                     ),
                 ),
             ) {
@@ -81,12 +98,13 @@ private data class SampleRoute(
 private val GalleryRoute = SampleRoute("gallery", 0, null)
 private val DetailRoute = SampleRoute("detail", 1, "gallery")
 private val IntroRoute = SampleRoute("intro", 1, "gallery")
+private val WaveformRoute = SampleRoute("waveform", 1, "gallery")
+private val SettingsRoute = SampleRoute("settings", 1, "gallery")
+private val StreamingRoute = SampleRoute("streaming", 1, "gallery")
 
 @Composable
 private fun SampleNavigator() {
     var current by remember { mutableStateOf<SampleRoute>(GalleryRoute) }
-    // Captured at the moment of navigation: AnimatedContent's transitionSpec sees
-    // the outgoing target here, not a state mutated during composition.
     var from by remember { mutableStateOf<SampleRoute?>(null) }
     val haptics = rememberShirokoWearHaptics()
 
@@ -108,10 +126,25 @@ private fun SampleNavigator() {
                 GalleryRoute.routeKey -> ComponentGallery(
                     onOpenDetail = { navigateTo(DetailRoute) { haptics.click() } },
                     onOpenIntro = { navigateTo(IntroRoute) { haptics.click() } },
+                    onOpenWaveform = { navigateTo(WaveformRoute) { haptics.click() } },
+                    onOpenSettings = { navigateTo(SettingsRoute) { haptics.click() } },
+                    onOpenStreaming = { navigateTo(StreamingRoute) { haptics.click() } },
                 )
 
                 IntroRoute.routeKey -> IntroScreen(
                     onFinish = { navigateTo(GalleryRoute) { haptics.back() } },
+                )
+
+                WaveformRoute.routeKey -> WaveformScreen(
+                    onBack = { navigateTo(GalleryRoute) { haptics.back() } },
+                )
+
+                SettingsRoute.routeKey -> SettingsDemoScreen(
+                    onBack = { navigateTo(GalleryRoute) { haptics.back() } },
+                )
+
+                StreamingRoute.routeKey -> StreamingDemoScreen(
+                    onBack = { navigateTo(GalleryRoute) { haptics.back() } },
                 )
 
                 else -> DetailScreen(
@@ -128,6 +161,9 @@ private val WheelItems = (1..12).map { value -> "%02d".format(value) }
 private fun ComponentGallery(
     onOpenDetail: () -> Unit,
     onOpenIntro: () -> Unit,
+    onOpenWaveform: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenStreaming: () -> Unit,
 ) {
     val dimens = ShirokoWearTheme.dimens
     val haptics = rememberShirokoWearHaptics()
@@ -205,6 +241,24 @@ private fun ComponentGallery(
             }
         }
 
+        item(key = "open-waveform") {
+            ShirokoWearCardButton(onClick = onOpenWaveform) {
+                Text(text = "Waveform Canvases")
+            }
+        }
+
+        item(key = "open-settings") {
+            ShirokoWearCardButton(onClick = onOpenSettings) {
+                Text(text = "Settings & Toggles")
+            }
+        }
+
+        item(key = "open-streaming") {
+            ShirokoWearCardButton(onClick = onOpenStreaming) {
+                Text(text = "Streaming Card")
+            }
+        }
+
         item(key = "open-intro") {
             ShirokoWearCardButton(onClick = onOpenIntro) {
                 Text(text = "Intro flow")
@@ -245,14 +299,6 @@ private fun DetailScreen(onBack: () -> Unit) {
 
 private const val IntroStepCount = 3
 
-/**
- * Intro harness: step machine + breathing dot + tap-to-advance + gradient wordmark.
- *
- * The video backdrop is called with no source deliberately — a clip is a brand
- * asset that lives in the consuming app, so the gallery can only exercise the API
- * and the blank/poster degradation path, not the loop itself. Decode behaviour needs
- * a device.
- */
 @Composable
 private fun IntroScreen(onFinish: () -> Unit) {
     var step by remember { mutableIntStateOf(0) }
@@ -305,4 +351,165 @@ private fun IntroScreen(onFinish: () -> Unit) {
 private fun introStepBody(index: Int): String = when (index) {
     1 -> "Consent step: cards stay translucent so this sandwood light bleeds through"
     else -> "Last step: the same tap finishes instead of advancing"
+}
+
+@OptIn(UnstableShirokoWearApi::class)
+@Composable
+private fun WaveformScreen(onBack: () -> Unit) {
+    val dimens = ShirokoWearTheme.dimens
+    val livePoints = remember { listOf(0.2f, 0.25f, 0.45f, 0.85f, 0.35f, 0.5f, 0.2f, 0.3f, 0.9f) }
+    val stripPoints = remember {
+        (0..40).map { i ->
+            (kotlin.math.sin(i * 0.4f) * 0.35f + 0.5f).coerceIn(0.1f, 0.9f)
+        }
+    }
+
+    ShirokoWearScalingRotaryColumn(itemSpacing = dimens.itemSpacing) {
+        item(key = "title") {
+            ShirokoWearScreenTitle(text = "Waveforms", marquee = true)
+        }
+        item(key = "live-wave") {
+            ShirokoWearResultCard {
+                ShirokoWearDetailField(label = "Live Wave Canvas", value = "Bezier glow + nucleus")
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
+                ) {
+                    ShirokoWearLiveWaveCanvas(points = livePoints)
+                }
+            }
+        }
+        item(key = "strip-wave") {
+            ShirokoWearResultCard {
+                ShirokoWearDetailField(label = "Strip Wave Canvas", value = "Dense polyline + baseline")
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
+                ) {
+                    ShirokoWearStripWaveCanvas(points = stripPoints)
+                }
+            }
+        }
+        item(key = "back") {
+            ShirokoWearCardButton(onClick = onBack) {
+                Text(text = "Pop back")
+            }
+        }
+    }
+}
+
+@OptIn(UnstableShirokoWearApi::class)
+@Composable
+private fun SettingsDemoScreen(onBack: () -> Unit) {
+    val dimens = ShirokoWearTheme.dimens
+    var toggleState by remember { mutableStateOf(true) }
+    var rotaryState by remember { mutableStateOf(false) }
+
+    ShirokoWearScalingRotaryColumn(itemSpacing = dimens.itemSpacing) {
+        item(key = "title") {
+            ShirokoWearScreenTitle(text = "Settings", marquee = true)
+        }
+        item(key = "item-motion") {
+            ShirokoWearSettingsItem(
+                title = "Appearance",
+                subtitle = "Round 40mm bezel with amber ambient",
+                onClick = {},
+            )
+        }
+        item(key = "toggle-1") {
+            ShirokoWearToggleCard(
+                checked = toggleState,
+                onCheckedChange = { toggleState = it },
+                label = "Haptic Feedback",
+                secondaryLabel = "Direct LRA tactile strikes",
+            )
+        }
+        item(key = "toggle-2") {
+            ShirokoWearToggleCard(
+                checked = rotaryState,
+                onCheckedChange = { rotaryState = it },
+                label = "Rotary Snapping",
+                secondaryLabel = "Crown detent alignment",
+            )
+        }
+        item(key = "back") {
+            ShirokoWearCardButton(onClick = onBack) {
+                Text(text = "Pop back")
+            }
+        }
+    }
+}
+
+@OptIn(UnstableShirokoWearApi::class)
+@Composable
+private fun StreamingDemoScreen(onBack: () -> Unit) {
+    val dimens = ShirokoWearTheme.dimens
+    val scope = rememberCoroutineScope()
+    var streamingState by remember {
+        mutableStateOf<ShirokoWearStreamingState<Unit>>(ShirokoWearStreamingState.Idle)
+    }
+    var activeJob by remember { mutableStateOf<Job?>(null) }
+
+    fun startSimulation() {
+        activeJob?.cancel()
+        streamingState = ShirokoWearStreamingState.Loading()
+        activeJob = scope.launch {
+            delay(600)
+            val tokens = listOf(
+                "Analyzing ", "wearable ", "telemetry...\n",
+                "Heart ", "rate ", "stable, ",
+                "motion ", "smooth.\n",
+                "All ", "systems ", "optimal.",
+            )
+            val acc = StringBuilder()
+            for (token in tokens) {
+                acc.append(token)
+                streamingState = ShirokoWearStreamingState.Streaming(acc.toString())
+                delay(120)
+            }
+            streamingState = ShirokoWearStreamingState.Completed(acc.toString())
+        }
+    }
+
+    ShirokoWearScalingRotaryColumn(itemSpacing = dimens.itemSpacing) {
+        item(key = "title") {
+            ShirokoWearScreenTitle(text = "Streaming", marquee = true)
+        }
+        item(key = "card") {
+            ShirokoWearStreamingCard(
+                state = streamingState,
+                title = "Assistant Stream",
+                onCancel = {
+                    activeJob?.cancel()
+                    streamingState = ShirokoWearStreamingState.Idle
+                },
+                onReset = {
+                    streamingState = ShirokoWearStreamingState.Idle
+                },
+                idleContent = {
+                    Text(
+                        text = "Tap below to simulate wearable token streaming.",
+                        style = androidx.wear.compose.material3.MaterialTheme.typography.bodySmall,
+                        color = androidx.wear.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    ShirokoWearCardButton(onClick = { startSimulation() }) {
+                        Text(text = "Start Stream")
+                    }
+                },
+                completedActions = {
+                    ShirokoWearCardButton(onClick = { startSimulation() }) {
+                        Text(text = "Run Again")
+                    }
+                },
+            )
+        }
+        item(key = "back") {
+            ShirokoWearCardButton(onClick = onBack) {
+                Text(text = "Pop back")
+            }
+        }
+    }
 }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shirokowear_action_cancel">Cancel</string>
+    <string name="shirokowear_action_retry">Retry</string>
+    <string name="shirokowear_action_reset">Reset</string>
+    <string name="shirokowear_streaming_loading">Generating…</string>
+</resources>

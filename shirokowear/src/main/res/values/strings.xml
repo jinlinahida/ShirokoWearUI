@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shirokowear_action_cancel">取消</string>
+    <string name="shirokowear_action_retry">重试</string>
+    <string name="shirokowear_action_reset">重置</string>
+    <string name="shirokowear_streaming_loading">生成中…</string>
+</resources>
