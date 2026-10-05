@@ -107,6 +107,11 @@ on a specific real watch, and what was not verified at all. Bezel-specific behav
 (crown scrolling, haptics, round layout clipping, frame rate) is never claimed without
 a device.
 
+`-alphaN` / `-betaN` releases may legitimately ship while device behaviour is still
+unverified — that is what they are for: a consuming app installs one and checks it on
+hardware. An unsuffixed `x.y.z` is the opposite claim and requires the device sign-off
+described in `AGENTS.md`.
+
 ## Licence
 
 Apache-2.0, see `LICENSE`. Icons derived from Lucide (ISC) carry a `NOTICE` file at

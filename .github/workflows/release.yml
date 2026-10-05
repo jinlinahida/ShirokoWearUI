@@ -1,8 +1,10 @@
 name: Release to Maven Central
 
-# Central artefacts are immutable: once 0.1.0-alpha01 exists it can never be
-# replaced. This workflow only runs on an explicit tag, and AGENTS.md requires a
-# consuming app to have validated the build on a real watch before the tag exists.
+# Central artefacts are immutable: once a version exists it can never be replaced.
+# This workflow only runs on an explicit tag. Per AGENTS.md the bar differs by
+# pre-release level: `-alphaNN` / `-betaNN` may ship on a green CI alone (that is
+# how a component gets tested on a real watch), while an unsuffixed `x.y.z` requires
+# a consuming app to have validated it on the source track and on named hardware.
 
 on:
   push:
